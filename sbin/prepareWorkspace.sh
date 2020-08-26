@@ -642,9 +642,9 @@ createSourceTagFile(){
       local OMR_TopDir="$OpenJDK_TopDir/omr"
       local OpenJ9_SHA=$(git -C $OpenJ9_TopDir rev-parse --short HEAD)
       local OMR_SHA=$(git -C $OMR_TopDir rev-parse --short HEAD)
-      (printf "OpenJDK: %s OpenJ9: %s OMR: %s" $OpenJDK_SHA $OpenJ9_SHA $OMR_SHA) > .hgtip
+      (printf "OpenJDK: %s OpenJ9: %s OMR: %s" $OpenJDK_SHA $OpenJ9_SHA $OMR_SHA) > $OpenJDK_TopDir/.hgtip
     else # Other variants only list the main repo SHA.
-      (printf "OpenJDK: %s" $OpenJDK_SHA) > .hgtip
+      (printf "OpenJDK: %s" $OpenJDK_SHA) > $OpenJDK_TopDir/.hgtip
     fi
   fi
 }
