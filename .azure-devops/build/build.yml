@@ -39,6 +39,27 @@ stages:
           - template: ./steps/macOS/build_hotspot.yml
           - template: ./steps/shared/after.yml
 
+  - stage: build_macOS_x64_openj9_binaries
+    variables:
+      skipComponentGovernanceDetection: true
+      TARGET_OS: "mac"
+      ARCHITECTURE: "x64"
+    displayName: "Build macOS x64 OpenJ9 Binaries"
+    dependsOn: []
+    # jdk8u cannot be built on macOS 10.14 or 10.13
+    condition: ne(variables.JAVA_TO_BUILD, 'jdk8u')
+    jobs:
+      - job: build_macOS_x64
+        timeoutInMinutes: 120
+        displayName: "Build macOS x64 OpenJ9"
+        pool:
+          vmImage: macOS-latest
+        steps:
+          - template: ./steps/shared/before.yml
+          - template: ./steps/macOS/before.yml
+          - template: ./steps/macOS/build_openj9.yml
+          - template: ./steps/shared/after.yml
+
   - stage: build_windows_x64_hotspot_binaries
     variables:
       skipComponentGovernanceDetection: true
@@ -56,6 +77,25 @@ stages:
           - template: ./steps/shared/before.yml
           - template: ./steps/windows/before.yml
           - template: ./steps/windows/build_hotspot.yml
+          - template: ./steps/shared/after.yml
+
+  - stage: build_windows_x64_openj9_binaries
+    variables:
+      skipComponentGovernanceDetection: true
+      TARGET_OS: "windows"
+      ARCHITECTURE: "x64"
+    displayName: "Build Windows x64 OpenJ9 Binaries"
+    dependsOn: []
+    jobs:
+      - job: build_windows_x64
+        timeoutInMinutes: 120
+        displayName: "Build Windows x64 OpenJ9"
+        pool:
+          vmImage: vs2017-win2016
+        steps:
+          - template: ./steps/shared/before.yml
+          - template: ./steps/windows/before.yml
+          - template: ./steps/windows/build_openJ9.yml
           - template: ./steps/shared/after.yml
 
   - stage: build_windows_x86_hotspot_binaries
