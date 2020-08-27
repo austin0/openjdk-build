@@ -95,7 +95,7 @@ stages:
         steps:
           - template: ./steps/shared/before.yml
           - template: ./steps/windows/before.yml
-          - template: ./steps/windows/build_openJ9.yml
+          - template: ./steps/windows/build_openj9.yml
           - template: ./steps/shared/after.yml
 
   - stage: build_windows_x86_hotspot_binaries
