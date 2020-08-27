@@ -35,6 +35,10 @@ steps:
           CONFIGURE_ARGS="--with-target-bits=32 --target=x86 ${CONFIGURE_ARGS}"
       fi
 
+      wget http://apache.mirror.anlx.net/freemarker/engine/2.3.30/binaries/apache-freemarker-2.3.30-bin.tar.gz -O freemarker.tar.gz
+      tar -xzf freemarker.tar.gz
+      CONFIGURE_ARGS="--with-freemarker-jar=$(pwd)/apache-freemarker-2.3.30-bin/freemarker.jar ${CONFIGURE_ARGS}"
+
       ./makejdk-any-platform.sh \
         ${EXTRA_MAKEJDK_ANY_PLATFORM_OPTIONS} \
         --jdk-boot-dir "${JDK_BOOT_DIR}" \
