@@ -34,10 +34,20 @@ steps:
       then
           CONFIGURE_ARGS="--with-target-bits=32 --target=x86 ${CONFIGURE_ARGS}"
       fi
-
+      
+      echo "Getting freemarker==========================================="
       wget http://apache.mirror.anlx.net/freemarker/engine/2.3.30/binaries/apache-freemarker-2.3.30-bin.tar.gz -O freemarker.tar.gz
       tar -xzf freemarker.tar.gz
       CONFIGURE_ARGS="--with-freemarker-jar=$(pwd)/apache-freemarker-2.3.30-bin/freemarker.jar ${CONFIGURE_ARGS}"
+      echo "Got freemarker==============================================="
+
+      echo "Getting nasm================================================="
+      wget https://www.nasm.us/pub/nasm/releasebuilds/2.13.03/nasm-2.13.03.tar.gz -O nasm.tar.gz
+      tar -xzf nasm.tar.gz
+      echo "Installing nasm=============================================="
+      cd $(pwd)/nasm-2.13.03 && CC={{ CC }} ./configure -prefix=/usr/local && make install
+      export PATH="/cygdrive/c/NASM:$PATH"
+      echo "Installed nasm==============================================="
 
       ./makejdk-any-platform.sh \
         ${EXTRA_MAKEJDK_ANY_PLATFORM_OPTIONS} \
