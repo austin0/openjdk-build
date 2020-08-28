@@ -37,7 +37,7 @@ steps:
   # untar downloaded JDK files & move it to directories
   - bash: |
       tar -xzf "${{ parameters.dependenciesDir }}/openjdk8.tar.gz" --strip-components=3 -C ${{ parameters.javaHomeDir }}
-      tar -xzf "${{ parameters.dependenciesDir }}/openjdk.tar.gz" --strip-components=2 -C ${{ parameters.jdkBootDir }}
+      tar -xzf "${{ parameters.dependenciesDir }}/openjdk.tar.gz" --strip-components=1 -C ${{ parameters.jdkBootDir }}
     displayName: "[Linux Before] extracting downloaded JDKs to directories"
 
   # set system veraibles that will be used by following steps
