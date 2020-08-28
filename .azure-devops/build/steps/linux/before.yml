@@ -45,6 +45,5 @@ steps:
       export JDK_BOOT_DIR=${{ parameters.jdkBootDir }}
       export JAVA_HOME=${{ parameters.javaHomeDir }}
       echo "##vso[task.setvariable variable=JDK_BOOT_DIR]${{ parameters.jdkBootDir }}"
-      echo "##vso[task.setvariable variable=JAVA_HOME]${{ parameters.javaHomeDir }}"
       echo "##vso[task.setvariable variable=PATH]${{ parameters.jdkBootDir }}/bin;$PATH"
     displayName: "[Linux Before] set JDK_BOOT_DIR, JAVA_HOME, and PATH environment variables"
