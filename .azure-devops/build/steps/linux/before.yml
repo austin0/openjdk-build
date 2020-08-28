@@ -44,5 +44,5 @@ steps:
   - bash: |
       export JDK_BOOT_DIR=${{ parameters.jdkBootDir }}
       export JAVA_HOME=${{ parameters.javaHomeDir }}
-      export PATH=${{ parameters.jdkBootDir }}/bin;$PATH
+  #   export PATH=${{ parameters.jdkBootDir }}/bin;$PATH
     displayName: "[Linux Before] set JDK_BOOT_DIR, JAVA_HOME, and PATH environment variables"
