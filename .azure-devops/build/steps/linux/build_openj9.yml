@@ -46,8 +46,8 @@ steps:
       tar -xzf nasm.tar.gz
       echo "Installing nasm=============================================="
       cd $(pwd)/nasm-2.15.05rc2
-      ./configure --prefix=/usr && make
-      make install
+      sudo ./configure --prefix=/usr && make
+      sudo make install
       export PATH="/cygdrive/c/NASM:$PATH"
       export PATH="$(pwd)/NASM:$PATH"
       echo "Installed nasm==============================================="

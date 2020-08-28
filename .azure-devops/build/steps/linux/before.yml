@@ -26,7 +26,6 @@ steps:
 
   # download JDKs from AdoptOpenJDK
   - bash: |
-      echo "${BOOTJDK_VERSION}"
       wget -O "${{ parameters.dependenciesDir }}/openjdk8.tar.gz" 'https://api.adoptopenjdk.net/v3/binary/latest/8/ga/linux/x64/jdk/hotspot/normal/adoptopenjdk?project=jdk'
       if [ "${BOOTJDK_VERSION}" == "7" ]; then
         wget -O "${{ parameters.dependenciesDir }}/openjdk.tar.gz" 'https://cdn.azul.com/zulu/bin/zulu7.40.0.15-ca-jdk7.0.272-linux_x64.tar.gz'
@@ -43,7 +42,7 @@ steps:
 
   # set system veraibles that will be used by following steps
   - bash: |
-      echo "##vso[task.setvariable variable=JDK_BOOT_DIR]${{ parameters.jdkBootDir }}"
-      echo "##vso[task.setvariable variable=JAVA_HOME]${{ parameters.javaHomeDir }}"
-      echo "##vso[task.setvariable variable=PATH]${{ parameters.jdkBootDir }}/bin;$PATH"
+      export JDK_BOOT_DIR=${{ parameters.jdkBootDir }}"
+      export JAVA_HOME=${{ parameters.javaHomeDir }}"
+      export PATH=${{ parameters.jdkBootDir }}/bin;$PATH"
     displayName: "[Linux Before] set JDK_BOOT_DIR, JAVA_HOME, and PATH environment variables"
