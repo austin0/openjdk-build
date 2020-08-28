@@ -18,6 +18,25 @@
 # https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted
 #
 stages:
+  - stage: build_Linux_x64_openJ9_binaries
+    variables:
+      skipComponentGovernanceDetection: true
+      TARGET_OS: "linux"
+      ARCHITECTURE: "x64"
+    displayName: "Build Linux x64 OpenJ9 Binaries"
+    dependsOn: []
+    jobs:
+      - job: build_Linux_x64
+        timeoutInMinutes: 120
+        displayName: "Build Linux x64 OpenJ9"
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - template: ./steps/shared/before.yml
+          - template: ./steps/linux/before.yml
+          - template: ./steps/linux/build_openj9.yml
+          - template: ./steps/shared/after.yml
+
   - stage: build_macOS_x64_hotspot_binaries
     variables:
       skipComponentGovernanceDetection: true

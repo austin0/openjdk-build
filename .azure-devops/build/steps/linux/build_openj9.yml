@@ -1,0 +1,72 @@
+# build_openj9.yml
+# run the ./makejdk-any-platform.sh and upload generated files to artifacts
+
+steps:
+  # using the AdoptOpenJDK build scripts to build the OpenJDK binaries
+  - bash: |
+      export PATH="/usr/bin:$PATH"
+
+      CONFIGURE_ARGS=
+      BUILD_ARGS=
+      if [ "$(JAVA_TO_BUILD)" == "jdk" ]
+      then
+          CONFIGURE_ARGS="--disable-warnings-as-errors --disable-ccache --with-toolchain-version=2017"
+          BUILD_ARGS="--jvm-variant client,server"
+      elif [ "$(JAVA_TO_BUILD)" == "jdk15" ]
+      then
+          CONFIGURE_ARGS="--disable-warnings-as-errors --disable-ccache --with-toolchain-version=2017"
+          BUILD_ARGS="--jvm-variant client,server"
+      elif [ "$(JAVA_TO_BUILD)" == "jdk14u" ]
+      then
+          CONFIGURE_ARGS="--disable-warnings-as-errors --disable-ccache --with-toolchain-version=2017"
+          BUILD_ARGS="--jvm-variant client,server"
+      elif [ "$(JAVA_TO_BUILD)" == "jdk11u" ]
+      then
+          CONFIGURE_ARGS="--disable-warnings-as-errors --disable-ccache --with-toolchain-version=2017"
+          BUILD_ARGS="--jvm-variant client,server"
+      elif [ "$(JAVA_TO_BUILD)" == "jdk8u" ]
+      then
+          CONFIGURE_ARGS="--disable-ccache --with-toolchain-version=2013"
+          BUILD_ARGS="--freetype-version 2.5.3"
+      fi
+
+      if [ "${ARCHITECTURE}" == "x86-32" ]
+      then
+          CONFIGURE_ARGS="--with-target-bits=32 --target=x86 ${CONFIGURE_ARGS}"
+      fi
+
+      echo "Getting freemarker==========================================="
+      wget http://apache.mirror.anlx.net/freemarker/engine/2.3.30/binaries/apache-freemarker-2.3.30-bin.tar.gz -O freemarker.tar.gz
+      tar -xzf freemarker.tar.gz
+      CONFIGURE_ARGS="--with-freemarker-jar=$(pwd)/apache-freemarker-2.3.30-bin/freemarker.jar ${CONFIGURE_ARGS}"
+      echo "Got freemarker==============================================="
+
+      echo "Getting nasm================================================="
+      wget https://www.nasm.us/pub/nasm/releasebuilds/2.15.05rc2/nasm-2.15.05rc2.tar.gz -O nasm.tar.gz
+      tar -xzf nasm.tar.gz
+      echo "Installing nasm=============================================="
+      cd $(pwd)/nasm-2.15.05rc2
+      ./configure --prefix=/usr && make
+      make install
+      export PATH="/cygdrive/c/NASM:$PATH"
+      export PATH="$(pwd)/NASM:$PATH"
+      echo "Installed nasm==============================================="
+      cd ..
+
+      ./makejdk-any-platform.sh \
+        ${EXTRA_MAKEJDK_ANY_PLATFORM_OPTIONS} \
+        --jdk-boot-dir "${JDK_BOOT_DIR}" \
+        --configure-args "${CONFIG_ARGS}" \
+        --destination artifacts \
+        --target-file-name "${FILENAME}.tar.gz" \
+        --use-jep319-certs \
+        --build-variant "openj9" \
+        $(JAVA_TO_BUILD)
+    displayName: "[Linux Build] start makejdk-any-platform process"
+
+  # upload the produced JDK/JRE binary to the build artifact service
+  - task: PublishPipelineArtifact@1
+    inputs:
+      artifactName: $(Agent.OS)_$(ARCHITECTURE)
+      targetPath: "$(Build.SourcesDirectory)/workspace/artifacts"
+    displayName: "[Linux Build] upload JKD/JRE artifact"
