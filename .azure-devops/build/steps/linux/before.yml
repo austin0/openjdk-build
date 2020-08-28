@@ -20,8 +20,9 @@ steps:
   # based on
   # https://github.com/AdoptOpenJDK/openjdk-infrastructure/blob/master/ansible/playbooks/AdoptOpenJDK_Unix_Playbook/roles/Common/vars/MacOSX.yml
   - bash: |
-      apt-get install autoconf ccache coreutils
-    displayName: "[Linux Before] brew install autoconf, ccache, coreutils"
+      sleep 15
+      sudo apt-get install autoconf ccache coreutils
+    displayName: "[Linux Before] apt-get install autoconf, ccache, coreutils"
 
   # download JDKs from AdoptOpenJDK
   - bash: |
