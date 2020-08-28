@@ -45,9 +45,12 @@ steps:
       wget https://www.nasm.us/pub/nasm/releasebuilds/2.13.03/nasm-2.13.03.tar.gz -O nasm.tar.gz
       tar -xzf nasm.tar.gz
       echo "Installing nasm=============================================="
-      cd $(pwd)/nasm-2.13.03 && CC={{ CC }} ./configure -prefix=/usr/local && make install
+      cd $(pwd)/nasm-2.13.03
+      ./configure -prefix=/usr/local
+      make install
       export PATH="/cygdrive/c/NASM:$PATH"
       echo "Installed nasm==============================================="
+      cd ..
 
       ./makejdk-any-platform.sh \
         ${EXTRA_MAKEJDK_ANY_PLATFORM_OPTIONS} \
