@@ -42,13 +42,14 @@ steps:
       echo "Got freemarker==============================================="
 
       echo "Getting nasm================================================="
-      wget https://www.nasm.us/pub/nasm/releasebuilds/2.13.03/nasm-2.13.03.tar.gz -O nasm.tar.gz
+      wget https://www.nasm.us/pub/nasm/releasebuilds/2.15.05rc2/nasm-2.15.05rc2.tar.gz -O nasm.tar.gz
       tar -xzf nasm.tar.gz
       echo "Installing nasm=============================================="
-      cd $(pwd)/nasm-2.13.03
-      ./configure -prefix=/usr/local
+      cd $(pwd)/nasm-2.15.05rc2
+      ./configure --prefix=/usr && make
       make install
       export PATH="/cygdrive/c/NASM:$PATH"
+      export PATH="$(pwd)/NASM:$PATH"
       echo "Installed nasm==============================================="
       cd ..
 
