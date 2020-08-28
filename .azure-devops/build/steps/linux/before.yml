@@ -44,7 +44,6 @@ steps:
   - bash: |
       export JDK_BOOT_DIR=${{ parameters.jdkBootDir }}
       export JAVA_HOME=${{ parameters.javaHomeDir }}
-  #   export PATH=${{ parameters.jdkBootDir }}/bin;$PATH
       echo "##vso[task.setvariable variable=JDK_BOOT_DIR]${{ parameters.jdkBootDir }}"
       echo "##vso[task.setvariable variable=JAVA_HOME]${{ parameters.javaHomeDir }}"
       echo "##vso[task.setvariable variable=PATH]${{ parameters.jdkBootDir }}/bin;$PATH"
