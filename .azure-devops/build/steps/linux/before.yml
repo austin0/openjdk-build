@@ -26,15 +26,12 @@ steps:
 
   # download JDKs from AdoptOpenJDK
   - bash: |
-      $ProgressPreference = 'SilentlyContinue';
       wget -O "${{ parameters.dependenciesDir }}/openjdk8.tar.gz" 'https://api.adoptopenjdk.net/v3/binary/latest/8/ga/linux/x64/jdk/hotspot/normal/adoptopenjdk?project=jdk'
-      if ('$(BOOTJDK_VERSION)' -eq '7') {
+      if [ "${BOOTJDK_VERSION}" == "7" ] then
         wget -O "${{ parameters.dependenciesDir }}/openjdk.tar.gz" "https://cdn.azul.com/zulu/bin/zulu7.40.0.15-ca-jdk7.0.272-linux_x64.tar.gz"
-      } elseif ('$(BOOTJDK_VERSION)' -eq '15'){
+      else
         wget -O "${{ parameters.dependenciesDir }}/openjdk.tar.gz" "https://api.adoptopenjdk.net/v3/binary/latest/$(BOOTJDK_VERSION)/ea/linux/x64/jdk/hotspot/normal/adoptopenjdk?project=jdk"
-      } else {
-        wget -O "${{ parameters.dependenciesDir }}/openjdk.tar.gz" "https://api.adoptopenjdk.net/v3/binary/latest/$(BOOTJDK_VERSION)/ga/linux/x64/jdk/hotspot/normal/adoptopenjdk?project=jdk"
-      }
+      fi
     displayName: "[Linux Before] download JDKs from AdoptOpenJDK"
 
   # untar downloaded JDK files & move it to directories
