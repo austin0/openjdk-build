@@ -834,7 +834,8 @@ fixJavaHomeUnderDocker() {
 addInfoToReleaseFile(){
   # Extra information is added to the release file here
   cd $PRODUCT_HOME
-  getJavaLocation
+#  getJavaLocation
+  JAVA_LOC="$PRODUCT_HOME/bin/java"
   addImplementor
   addBuildSHA
   addBuildNumber
