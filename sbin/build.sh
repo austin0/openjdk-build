@@ -878,6 +878,7 @@ getJavaLocation(){
     JAVA_LOC="$PRODUCT_HOME/bin/java.exe"
   elif [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "darwin" ]; then
     JAVA_LOC="$PRODUCT_HOME/Contents/Home/bin/java"
+  fi
 }
 
 addJVMVersion(){
