@@ -833,7 +833,7 @@ fixJavaHomeUnderDocker() {
 
 addInfoToReleaseFile(){
   # Extra information is added to the release file here
-  cd ${BUILD_CONFIG[JDK_PATH]}
+  cd $PRODUCT_HOME
   addImplementor
   addBuildSHA
   addBuildNumber
@@ -855,7 +855,7 @@ addBuildNumber(){
 }
 
 addHeapSize(){
-  local jdkPath=${BUILD_CONFIG[JDK_PATH]}
+  local jdkPath=$PRODUCT_HOME
   if [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK8_CORE_VERSION}" ]; then
     if [ -d $jdkPath/jre/lib/amd64/compressedrefs ] || [ -d $jdkPath/lib/compressedrefs ]; then
       echo -e HEAP_SIZE=\"Standard\" >> release
@@ -872,11 +872,11 @@ addImplementor(){
 }
 
 addJVMVersion(){
-  local javaLoc="${BUILD_CONFIG[JDK_PATH]}/bin/java"
+  local javaLoc="$PRODUCT_HOME/bin/java"
   if [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "cygwin" ]; then
-    javaLoc="${BUILD_CONFIG[JDK_PATH]}/bin/java.exe"
+    javaLoc="$PRODUCT_HOME/bin/java.exe"
   elif [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "darwin" ]; then
-    javaLoc="${BUILD_CONFIG[JDK_PATH]}/Contents/Home/bin/java"
+    javaLoc="$PRODUCT_HOME/Contents/Home/bin/java"
   fi
   local jvmVersion = $($javaLoc -XshowSettings:properties -version 2>&1 | grep 'java.vm.version' | sed 's/^.*= //')
   echo -e JVM_VERSION=\"$jvmVersion\" >> release
