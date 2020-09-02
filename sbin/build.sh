@@ -878,7 +878,7 @@ addJVMVersion(){
   elif [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "darwin" ]; then
     javaLoc="$PRODUCT_HOME/Contents/Home/bin/java"
   fi
-  local jvmVersion = $($javaLoc -XshowSettings:properties -version 2>&1 | grep 'java.vm.version' | sed 's/^.*= //')
+  local jvmVersion=$($javaLoc -XshowSettings:properties -version 2>&1 | grep 'java.vm.version' | sed 's/^.*= //')
   echo -e JVM_VERSION=\"$jvmVersion\" >> release
 }
 
