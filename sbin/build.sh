@@ -834,6 +834,7 @@ fixJavaHomeUnderDocker() {
 addInfoToReleaseFile(){
   # Extra information is added to the release file here
   cd $PRODUCT_HOME
+  getJavaLocation
   addImplementor
   addBuildSHA
   addBuildNumber
@@ -871,15 +872,19 @@ addImplementor(){
   fi  
 }
 
-addJVMVersion(){
-  local javaLoc="$PRODUCT_HOME/bin/java"
+getJavaLocation(){
+  JAVA_LOC="$PRODUCT_HOME/bin/java"
   if [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "cygwin" ]; then
-    javaLoc="$PRODUCT_HOME/bin/java.exe"
+    JAVA_LOC="$PRODUCT_HOME/bin/java.exe"
   elif [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "darwin" ]; then
-    javaLoc="$PRODUCT_HOME/Contents/Home/bin/java"
-    xattr -d com.apple.quarantine $PRODUCT_HOME
-  fi
-  local jvmVersion=$($javaLoc -XshowSettings:properties -version 2>&1 | grep 'java.vm.version' | sed 's/^.*= //')
+    JAVA_LOC="$PRODUCT_HOME/Contents/Home/bin/java"
+}
+
+addJVMVersion(){
+  local jvmVersion=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'java.vm.version' | sed 's/^.*= //')
+  echo jvmVersion
+  echo $($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'java.vm.version' | sed 's/^.*= //')
+  echo $($JAVA_LOC -XshowSettings:properties -version)
   echo -e JVM_VERSION=\"$jvmVersion\" >> release
 }
 
@@ -901,16 +906,15 @@ addJVMVariant(){
 
 addBuildSHA(){
   local buildSHA=$(git -C ${BUILD_CONFIG[WORKSPACE_DIR]} rev-parse --short HEAD)
-  echo -e BUILD_SOURCE=\"$buildSHA\" >> release
+  echo -e BUILD_SOURCE=\"git:$buildSHA\" >> release
 }
 
 addBuildOS(){
   local buildOS=""
   local buildVer=""
   if [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "cygwin" ]; then
-    local javaLoc="$PRODUCT_HOME/bin/java.exe"
-    buildOS=$($javaLoc -XshowSettings:properties -version 2>&1 | grep 'os.name' | sed 's/^.*= //')
-    buildVer=$($javaLoc -XshowSettings:properties -version 2>&1 | grep 'os.version' | sed 's/^.*= //')
+    buildOS=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'os.name' | sed 's/^.*= //')
+    buildVer=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'os.version' | sed 's/^.*= //')
   elif [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "darwin" ]; then
     buildOS=$(sw_vers | sed -n 's/^ProductName:[[:blank:]]*//p')
     buildVer=$(sw_vers | tail -n 2 | awk '{print $2}')
