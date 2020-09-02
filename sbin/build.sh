@@ -834,7 +834,6 @@ fixJavaHomeUnderDocker() {
 addInfoToReleaseFile(){
   # Extra information is added to the release file here
   cd $PRODUCT_HOME
-#  getJavaLocation
   JAVA_LOC="$PRODUCT_HOME/bin/java"
   addImplementor
   addBuildSHA
@@ -851,8 +850,9 @@ addInfoToReleaseFile(){
 
 addBuildNumber(){
   # If variable is populated add it to the release file
-  if [[ ${BUILD_CONFIG[OPENJDK_BUILD_NUMBER]} ]]; then
-    echo -e BUILD_NUMBER=\"${BUILD_CONFIG[OPENJDK_BUILD_NUMBER]}\" >> release
+  local buildNo=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'java.runtime.version' | sed 's/^.*+ //')
+  if [[ $buildNo ]]; then
+    echo -e BUILD_NUMBER=\"$buildNo\" >> release
   fi
 }
 
@@ -873,25 +873,14 @@ addImplementor(){
   fi  
 }
 
-getJavaLocation(){
-  JAVA_LOC="$PRODUCT_HOME/bin/java"
-  if [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "cygwin" ]; then
-    JAVA_LOC="$PRODUCT_HOME/bin/java.exe"
-  elif [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "darwin" ]; then
-    JAVA_LOC="$PRODUCT_HOME/Contents/Home/bin/java"
-  fi
-}
-
 addJVMVersion(){
   local jvmVersion=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'java.vm.version' | sed 's/^.*= //')
-  echo jvmVersion
-  echo $($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'java.vm.version' | sed 's/^.*= //')
-  echo $($JAVA_LOC -XshowSettings:properties -version)
   echo -e JVM_VERSION=\"$jvmVersion\" >> release
 }
 
 addFullVersion(){
-      echo -e FULL_VERSION=\"${BUILD_CONFIG[TAG]}\" >> release
+  local fullVer=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'java.runtime.version' | sed 's/^.*= //')
+  echo -e FULL_VERSION=\"$fullVer\" >> release
 }
 
 addJVMVariant(){
@@ -912,17 +901,17 @@ addBuildSHA(){
 }
 
 addBuildOS(){
-  local buildOS=""
-  local buildVer=""
-  if [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "cygwin" ]; then
-    buildOS=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'os.name' | sed 's/^.*= //')
-    buildVer=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'os.version' | sed 's/^.*= //')
-  elif [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "darwin" ]; then
+  local buildOS="Unknown"
+  local buildVer="Unknown"
+  if [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "darwin" ]; then
     buildOS=$(sw_vers | sed -n 's/^ProductName:[[:blank:]]*//p')
     buildVer=$(sw_vers | tail -n 2 | awk '{print $2}')
   elif [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "linux" ]; then
     buildOS=$(uname -s)
     buildVer=$(uname -r)
+  else
+    buildOS=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'os.name' | sed 's/^.*= //')
+    buildVer=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'os.version' | sed 's/^.*= //')
   fi
   echo -e BUILD_INFO=\"OS: $buildOS Version: $buildVer\" >> release
 }
