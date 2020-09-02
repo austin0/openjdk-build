@@ -877,6 +877,7 @@ addJVMVersion(){
     javaLoc="$PRODUCT_HOME/bin/java.exe"
   elif [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "darwin" ]; then
     javaLoc="$PRODUCT_HOME/Contents/Home/bin/java"
+    xattr -d com.apple.quarantine $PRODUCT_HOME
   fi
   local jvmVersion=$($javaLoc -XshowSettings:properties -version 2>&1 | grep 'java.vm.version' | sed 's/^.*= //')
   echo -e JVM_VERSION=\"$jvmVersion\" >> release
@@ -907,8 +908,9 @@ addBuildOS(){
   local buildOS=""
   local buildVer=""
   if [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "cygwin" ]; then
-    buildOS=$(systeminfo | sed -n 's/^OS Name:[[:blank:]]*//p')
-    buildVer=$(systeminfo | sed -n 's/^OS Version:[[:blank:]]*//p')
+    local javaLoc="$PRODUCT_HOME/bin/java.exe"
+    buildOS=$($javaLoc -XshowSettings:properties -version 2>&1 | grep 'os.name' | sed 's/^.*= //')
+    buildVer=$($javaLoc -XshowSettings:properties -version 2>&1 | grep 'os.version' | sed 's/^.*= //')
   elif [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "darwin" ]; then
     buildOS=$(sw_vers | sed -n 's/^ProductName:[[:blank:]]*//p')
     buildVer=$(sw_vers | tail -n 2 | awk '{print $2}')
