@@ -865,12 +865,12 @@ addImplementor(){
 }
 
 addJVMVersion(){
-  local jvmVersion=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'java.vm.version' | sed 's/^.*= //')
+  local jvmVersion=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'java.vm.version' | sed 's/^.*= //' | tr -d '\n')
   echo -e JVM_VERSION=\"$jvmVersion\" >> release
 }
 
 addFullVersion(){
-  local fullVer=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'java.runtime.version' | sed 's/^.*= //')
+  local fullVer=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'java.runtime.version' | sed 's/^.*= //' | tr -d '\n')
   echo -e FULL_VERSION=\"$fullVer\" >> release
 }
 
@@ -902,8 +902,8 @@ addBuildOS(){
     buildOS=$(uname -s)
     buildVer=$(uname -r)
   else
-    buildOS=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'os.name' | sed 's/^.*= //')
-    buildVer=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'os.version' | sed 's/^.*= //')
+    buildOS=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'os.name' | sed 's/^.*= //' | tr -d '\n')
+    buildVer=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'os.version' | sed 's/^.*= //' | tr -d '\n')
   fi
   echo -e BUILD_INFO=\"OS: $buildOS Version: $buildVer\" >> release
 }
