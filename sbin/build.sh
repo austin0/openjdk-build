@@ -848,14 +848,6 @@ addInfoToReleaseFile(){
   fi
 }
 
-addBuildNumber(){
-  # If variable is populated add it to the release file
-  local buildNo=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'java.runtime.version' | sed 's/^.*+ //')
-  if [[ $buildNo ]]; then
-    echo -e BUILD_NUMBER=\"$buildNo\" >> release
-  fi
-}
-
 addHeapSize(){
   local jdkPath=$PRODUCT_HOME
   if [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK8_CORE_VERSION}" ]; then
