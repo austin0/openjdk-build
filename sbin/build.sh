@@ -837,7 +837,6 @@ addInfoToReleaseFile(){
   JAVA_LOC="$PRODUCT_HOME/bin/java"
   addImplementor
   addBuildSHA
-  addBuildNumber
   addFullVersion
   addBuildOS
   addJVMVariant
