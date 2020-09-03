@@ -865,12 +865,12 @@ addImplementor(){
 }
 
 addJVMVersion(){
-  local jvmVersion=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'java.vm.version' | sed 's/^.*= //' | tr -d '\n')
+  local jvmVersion=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'java.vm.version' | sed 's/^.*= //' | tr -d '\r')
   echo -e JVM_VERSION=\"$jvmVersion\" >> release
 }
 
 addFullVersion(){
-  local fullVer=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'java.runtime.version' | sed 's/^.*= //' | tr -d '\n')
+  local fullVer=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'java.runtime.version' | sed 's/^.*= //' | tr -d '\r')
   echo -e FULL_VERSION=\"$fullVer\" >> release
 }
 
@@ -894,7 +894,6 @@ addBuildSHA(){
 addBuildOS(){
   local buildOS="Unknown"
   local buildVer="Unknown"
-  echo "${BUILD_CONFIG[OS_KERNEL_NAME]}======================KERNEL NAME========================================"
   if [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "darwin" ]; then
     buildOS=$(sw_vers | sed -n 's/^ProductName:[[:blank:]]*//p')
     buildVer=$(sw_vers | tail -n 2 | awk '{print $2}')
@@ -902,8 +901,8 @@ addBuildOS(){
     buildOS=$(uname -s)
     buildVer=$(uname -r)
   else
-    buildOS=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'os.name' | sed 's/^.*= //' | tr -d '\n')
-    buildVer=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'os.version' | sed 's/^.*= //' | tr -d '\n')
+    buildOS=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'os.name' | sed 's/^.*= //' | tr -d '\r')
+    buildVer=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'os.version' | sed 's/^.*= //' | tr -d '\r')
   fi
   echo -e BUILD_INFO=\"OS: $buildOS Version: $buildVer\" >> release
 }
