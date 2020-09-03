@@ -903,6 +903,7 @@ addBuildSHA(){
 addBuildOS(){
   local buildOS="Unknown"
   local buildVer="Unknown"
+  echo "${BUILD_CONFIG[OS_KERNEL_NAME]}======================KERNEL NAME========================================"
   if [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "darwin" ]; then
     buildOS=$(sw_vers | sed -n 's/^ProductName:[[:blank:]]*//p')
     buildVer=$(sw_vers | tail -n 2 | awk '{print $2}')
