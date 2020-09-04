@@ -875,7 +875,8 @@ addFullVersion(){
 }
 
 addJVMVariant(){
-  echo -e JVM_VARIANT=\""${BUILD_CONFIG[BUILD_VARIANT]^}"\" >> release
+  local jvmName="${BUILD_CONFIG[BUILD_VARIANT]}"
+  echo -e JVM_VARIANT=\"${jvmName^}\" >> release
 }
 
 addBuildSHA(){
