@@ -875,14 +875,7 @@ addFullVersion(){
 }
 
 addJVMVariant(){
-  local jvmName=""
-  if [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_OPENJ9}" ]; then
-    jvmName="Openj9";
-  elif [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_CORRETTO}" ]; then
-    jvmName="Corretto";
-  elif [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_HOTSPOT}" ]; then
-    jvmName="Hotspot";
-  fi
+  local jvmName="${BUILD_CONFIG[BUILD_VARIANT]}"
   echo -e JVM_VARIANT=\"$jvmName\" >> release
 }
 
