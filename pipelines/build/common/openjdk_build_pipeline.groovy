@@ -494,6 +494,19 @@ class Build {
                 context.println "ERROR: ${configurePath} was not found. Exiting..."
                 throw new Exception()
             }
+
+            // Get JVM Version
+            String jvmPath = "workspace/target/jvm_version.txt"
+            context.println "INFO: Attempting to read ${configurePath}..."
+
+            try {
+                jvmVersionOutput = context.readFile(jvmPath)
+                context.println "SUCCESS: jvm_version.txt found"
+            } catch (NoSuchFileException e) {
+                context.println "ERROR: ${jvmPath} was not found. Exiting..."
+                throw new Exception()
+            }
+        
         }
 
         return new MetaData(
@@ -502,6 +515,7 @@ class Build {
             version,
             buildConfig.JAVA_TO_BUILD,
             buildConfig.VARIANT,
+            jvmVersion,
             buildConfig.ARCHITECTURE,
             fullVersionOutput,
             configureArguments
@@ -516,6 +530,7 @@ class Build {
                 "os": "mac",
                 "arch": "x64",
                 "variant": "openj9",
+                "jvm_version": "openj9-0.22.0",
                 "version": {
                     "minor": 0,
                     "security": 0,
