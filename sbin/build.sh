@@ -838,6 +838,7 @@ addInfoToReleaseFile(){
   addImplementor
   addBuildSHA
   addFullVersion
+  addSemVer
   addBuildOS
   addJVMVariant
   addJVMVersion
@@ -908,6 +909,17 @@ addJ9Tag(){
     local j9Tag=$(git -C $j9Location describe --abbrev=0)
     echo -e OPENJ9_TAG=\"$j9Tag\" >> release
   fi
+}
+
+addSemVer(){ # For RELEASES jdk11+ can use fullVer, jdk8u needs help. NON-RELEASES need help always
+  local fullVer=$(getOpenJdkVersion)
+  local semVer="$fullVer"
+  if [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK8_CORE_VERSION}" ]; then
+    semVer=$(echo "$semVer" | cut -c4- | awk -F'[\-b0]+' '{print $1"+"$2}' | sed 's/u/.0./')
+  else
+    semVer=$(echo "$semVer" | cut -c5-)
+  fi
+  echo -e SEMANTIC_VERSION=\"$semVer\" >> release
 }
 
 ################################################################################
