@@ -847,6 +847,8 @@ addInfoToReleaseFile(){
     addHeapSize
     addJ9Tag
   fi
+  mirrorToJRE
+  addImageType
 }
 
 addHeapSize(){ # Adds an identifier for heap size on OpenJ9 builds
@@ -920,6 +922,26 @@ addSemVer(){ # For RELEASES jdk11+ can use fullVer, jdk8u needs help. NON-RELEAS
     semVer=$(echo "$semVer" | cut -c5-)
   fi
   echo -e SEMANTIC_VERSION=\"$semVer\" >> release
+}
+
+mirrorToJRE(){
+  stepIntoTheWorkingDirectory
+
+  case "${BUILD_CONFIG[OS_KERNEL_NAME]}" in
+  "darwin")
+    JRE_HOME=$(ls -d ${PWD}/build/*/images/${BUILD_CONFIG[JRE_PATH]}/Contents/Home)
+  ;;
+  *)
+    JRE_HOME=$(ls -d ${PWD}/build/*/images/${BUILD_CONFIG[JRE_PATH]})
+  ;;
+  esac
+
+  cp -f $PRODUCT_HOME/release $JRE_HOME/release
+}
+
+addImageType(){
+  echo -e IMAGE_TYPE=\"JDK\" >> $PRODUCT_HOME/release
+  echo -e IMAGE_TYPE=\"JRE\" >> $JRE_HOME/release
 }
 
 ################################################################################
