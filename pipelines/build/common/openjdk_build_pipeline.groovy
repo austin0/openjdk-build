@@ -88,6 +88,7 @@ class Build {
         switch (buildConfig.VARIANT) {
             case "openj9": variant = "j9"; break
             case "corretto": variant = "corretto"; break
+            case "dragonwell": variant = "dragonwell"; break;
             default: variant = "hs"
         }
 
@@ -118,6 +119,8 @@ class Build {
             jdkBranch = 'openj9'
         } else if (buildConfig.VARIANT == "hotspot"){
             jdkBranch = 'dev'
+        } else if (buildConfig.VARIANT == "dragonwell") {
+            jdkBranch = 'master'
         } else {
             context.error("Unrecognized build variant '${buildConfig.VARIANT}' ")
             throw new Exception()
@@ -135,8 +138,10 @@ class Build {
             suffix="corretto/corretto-${javaNumber}"
         } else if (buildConfig.VARIANT == "openj9") {
             suffix = "ibmruntimes/openj9-openjdk-jdk${javaNumber}"
-        } else if (buildConfig.VARIANT == "hotspot"){
+        } else if (buildConfig.VARIANT == "hotspot") {
             suffix = "adoptopenjdk/openjdk-${buildConfig.JAVA_TO_BUILD}"
+        } else if (buildConfig.VARIANT == "dragonwell") {
+            suffix = "alibaba/dragonwell${javaNumber}"
         } else {
             context.error("Unrecognized build variant '${buildConfig.VARIANT}' ")
             throw new Exception()
@@ -471,8 +476,8 @@ class Build {
 
             }
 
-            // Get full version output
-            String versionPath = "workspace/target/version.txt"
+            // Get Full Version Output
+            String versionPath = "workspace/target/metadata/version.txt"
             context.println "INFO: Attempting to read ${versionPath}..."
 
             try {
@@ -483,8 +488,8 @@ class Build {
                 throw new Exception()
             }
 
-            // Get configure args
-            String configurePath = "workspace/target/configure.txt"
+            // Get Configure Args
+            String configurePath = "workspace/target/metadata/configure.txt"
             context.println "INFO: Attempting to read ${configurePath}..."
 
             try {
@@ -494,14 +499,54 @@ class Build {
                 context.println "ERROR: ${configurePath} was not found. Exiting..."
                 throw new Exception()
             }
+
+            // Get JVM Version
+            String jvmPath = "workspace/target/metadata/jvm_version.txt"
+            context.println "INFO: Attempting to read ${configurePath}..."
+
+            try {
+                jvmVersionOutput = context.readFile(jvmPath)
+                context.println "SUCCESS: jvm_version.txt found"
+            } catch (NoSuchFileException e) {
+                context.println "ERROR: ${jvmPath} was not found. Exiting..."
+                throw new Exception()
+            }
+
+            // Get Vendor
+            String vendorPath = "workspace/target/metadata/vendor.txt"
+            context.println "INFO: Attempting to read ${vendorPath}..."
+
+            try {
+                vendorName = context.readFile(vendorPath)
+                context.println "SUCCESS: jvm_version.txt found"
+            } catch (NoSuchFileException e) {
+                context.println "ERROR: ${vendorPath} was not found. Exiting..."
+                throw new Exception()
+            }
+
+            // Get Build Source
+            String buildSourcePath = "workspace/target/metadata/buildSource.txt"
+            context.println "INFO: Attempting to read ${buildSourcePath}..."
+
+            try {
+                buildSource = context.readFile(buildSourcePath)
+                context.println "SUCCESS: buildSource.txt found"
+            } catch (NoSuchFileException e) {
+                context.println "ERROR: ${buildSourcePath} was not found. Exiting..."
+                throw new Exception()
+            }
+        
         }
 
         return new MetaData(
+            vendorName,
             buildConfig.TARGET_OS,
             scmRef,
+            buildSource,
             version,
             buildConfig.JAVA_TO_BUILD,
             buildConfig.VARIANT,
+            jvmVersionOutput,
             buildConfig.ARCHITECTURE,
             fullVersionOutput,
             configureArguments
@@ -513,10 +558,11 @@ class Build {
         /*
         example data:
             {
-                "WARNING": "THIS METADATA FILE IS STILL IN ALPHA DO NOT USE ME",
+                "vendor": "AdoptOpenJDK",
                 "os": "mac",
                 "arch": "x64",
                 "variant": "openj9",
+                "jvm_version": "openj9-0.22.0",
                 "version": {
                     "minor": 0,
                     "security": 0,
@@ -529,6 +575,7 @@ class Build {
                     "opt": "202007070926"
                 },
                 "scmRef": "<output of git describe OR buildConfig.SCM_REF>",
+                "buildRef": "<build-repo-name/build-commit-sha>"
                 "version_data": "jdk15",
                 "binary_type": "debugimage",
                 "sha256": "<shasum>",

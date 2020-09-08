@@ -132,7 +132,7 @@ getOpenJdkVersion() {
   local version;
 
   if [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_CORRETTO}" ]; then
-    local corrVerFile=${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}/version.txt
+    local corrVerFile=${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}/metadata/version.txt
 
     local corrVersion="$(cut -d'.' -f 1 < ${corrVerFile})"
 
@@ -150,7 +150,9 @@ getOpenJdkVersion() {
     fi
   else
     version=${BUILD_CONFIG[TAG]:-$(getFirstTagFromOpenJDKGitRepo)}
-
+    if [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]; then
+      version=$(echo $version | cut -d'_' -f 2)
+    fi
     # TODO remove pending #1016
     version=${version%_adopt}
     version=${version#aarch64-shenandoah-}
@@ -177,6 +179,12 @@ configuringVersionStringParameter()
   fi
 
   local dateSuffix=$(date -u +%Y%m%d%H%M)
+
+  if [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]]; then
+    BUILD_CONFIG[VENDOR]="Alibaba"
+  else
+    BUILD_CONFIG[VENDOR]="AdoptOpenJDK"
+  fi
 
   if [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK8_CORE_VERSION}" ]; then
 
@@ -244,10 +252,18 @@ configuringVersionStringParameter()
 
     addConfigureArg "--without-version-pre" ""
     addConfigureArgIfValueIsNotEmpty "--with-version-build=" "${buildNumber}"
-    addConfigureArg "--with-vendor-version-string=" "AdoptOpenJDK"
-    addConfigureArg "--with-vendor-url=" "https://adoptopenjdk.net/"
-    addConfigureArg "--with-vendor-name=" "AdoptOpenJDK"
-    addConfigureArg "--with-vendor-bug-url=" "https://github.com/AdoptOpenJDK/openjdk-support/issues"
+    
+    if [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]]; then
+        addConfigureArg "--with-vendor-name=" "${BUILD_CONFIG[VENDOR]}"
+        addConfigureArg "--with-vendor-version-string=" "\"(Alibaba Dragonwell)\""
+        addConfigureArg "--with-vendor-url=" "http://www.alibabagroup.com"
+        addConfigureArg "--with-vendor-bug-url=" "mailto:dragonwell_use@googlegroups.com"
+    else # ${BUILD_CONFIG[VENDOR]} defaults to AdoptOpenJDK
+        addConfigureArg "--with-vendor-name=" "${BUILD_CONFIG[VENDOR]}"
+        addConfigureArg "--with-vendor-version-string=" "AdoptOpenJDK"
+        addConfigureArg "--with-vendor-url=" "https://adoptopenjdk.net/"
+        addConfigureArg "--with-vendor-bug-url=" "https://github.com/AdoptOpenJDK/openjdk-support/issues"
+    fi
 
     if [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_OPENJ9}" ]]; then
       addConfigureArg "--with-vendor-vm-bug-url=" "https://github.com/eclipse/openj9/issues"
@@ -346,6 +362,11 @@ configureCommandParameters()
 
   echo "Configuring jvm variants if provided"
   addConfigureArgIfValueIsNotEmpty "--with-jvm-variants=" "${BUILD_CONFIG[JVM_VARIANT]}"
+
+  if [ "${BUILD_CONFIG[CUSTOM_CACERTS]}" != "false" ] ; then
+    echo "Configure custom cacerts file security/cacerts"
+    addConfigureArgIfValueIsNotEmpty "--with-cacerts-file=" "$SCRIPT_DIR/../security/cacerts"
+  fi
 
   # Now we add any configure arguments the user has specified on the command line.
   CONFIGURE_ARGS="${CONFIGURE_ARGS} ${BUILD_CONFIG[USER_SUPPLIED_CONFIGURE_ARGS]}"
@@ -520,7 +541,7 @@ printJavaVersionString()
        # riscv is cross compiled, so we cannot run it on the build system
        # This is a temporary plausible solution in the absence of another fix
        local jdkversion=$(getOpenJdkVersion)
-       cat << EOT > "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/version.txt"
+       cat << EOT > "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/version.txt"
 openjdk version "${jdkversion%%+*}" "$(date +%Y-%m-%d)"
 OpenJDK Runtime Environment AdoptOpenJDK (build ${jdkversion%%+*}+0-$(date +%Y%m%d%H%M))
 Eclipse OpenJ9 VM AdoptOpenJDK (build master-000000000, JRE 11 Linux riscv-64-Bit Compressed References $(date +%Y%m%d)_00 (JIT disabled, AOT disabled)
@@ -535,7 +556,7 @@ EOT
        "$PRODUCT_HOME"/bin/java -version 2>&1
        echo "=/JAVA VERSION OUTPUT="
 
-       "$PRODUCT_HOME"/bin/java -version > "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/version.txt" 2>&1
+       "$PRODUCT_HOME"/bin/java -version > "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/version.txt" 2>&1
      fi
   else
     echo "'$PRODUCT_HOME' does not exist, build might have not been successful or not produced the expected JDK image at this location."
@@ -819,6 +840,7 @@ wipeOutOldTargetDir() {
 createTargetDir() {
   # clean out old builds
   mkdir -p "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}" || exit
+  mkdir "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata" || exit
 }
 
 fixJavaHomeUnderDocker() {
@@ -868,8 +890,8 @@ addImplementor(){
 }
 
 addJVMVersion(){ # Adds the JVM version i.e. openj9-0.21.0
-  local jvmVersion=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'java.vm.version' | sed 's/^.*= //' | tr -d '\r')
-  echo -e JVM_VERSION=\"$jvmVersion\" >> release
+  JVM_VERSION=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'java.vm.version' | sed 's/^.*= //' | tr -d '\r')
+  echo -e JVM_VERSION=\"$JVM_VERSION\" >> release
 }
 
 addFullVersion(){ # Adds the full version including build number i.e. 11.0.9+5-202009040847
@@ -882,8 +904,8 @@ addJVMVariant(){
 }
 
 addBuildSHA(){ # git SHA of the build repository i.e. openjdk-build
-  local buildSHA=$(git -C ${BUILD_CONFIG[WORKSPACE_DIR]} rev-parse --short HEAD)
-  echo -e BUILD_SOURCE=\"git:$buildSHA\" >> release
+  BUILD_SHA=$(git -C ${BUILD_CONFIG[WORKSPACE_DIR]} rev-parse --short HEAD)
+  echo -e BUILD_SOURCE=\"git:$BUILD_SHA\" >> release
 }
 
 addBuildOS(){
@@ -944,6 +966,30 @@ addImageType(){
   echo -e IMAGE_TYPE=\"JRE\" >> $JRE_HOME/release
 }
 
+addInfoToJson(){
+  mv "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/configure.txt" "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/"
+  addJVMInfoToJson
+  addVendorToJson
+  addSourceToJson # Build repository commit SHA
+}
+
+addJVMInfoToJson(){
+  if [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_OPENJ9}" ] && [ ${BUILD_CONFIG[RELEASE]} = false ]; then  
+    local j9Location="${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}/openj9"
+    JVM_VERSION=$(git -C $j9Location describe --abbrev=0)
+  fi
+  echo $JVM_VERSION > ${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/jvm_version.txt
+}
+
+addVendorToJson(){
+  echo "${BUILD_CONFIG[VENDOR]}" > ${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/vendor.txt
+}
+
+addSourceToJson(){
+  local repoName=$(basename -s .git $(cd ${BUILD_CONFIG[WORKSPACE_DIR]} && git config --get remote.origin.url))
+  echo "$repoName/$BUILD_SHA" > ${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/buildSource.txt
+}
+
 ################################################################################
 
 loadConfigFromFile
@@ -977,6 +1023,7 @@ executeTemplatedFile
 if [[ "${BUILD_CONFIG[MAKE_EXPLODED]}" != "true" ]]; then
   printJavaVersionString
   addInfoToReleaseFile
+  addInfoToJson
   removingUnnecessaryFiles
   copyFreeFontForMacOS
   createOpenJDKTarArchive

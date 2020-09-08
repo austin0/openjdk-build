@@ -169,6 +169,9 @@ if using docker, keep the container after the build.
 --make-exploded-image
 creates an exploded image (useful for codesigning jmods). Use --assemble-exploded-image once you have signed the jmods to complete the packaging steps.
 
+--custom-cacerts <true|false>
+If true (default), a custom cacerts file will be generated based on Mozilla's list of CA certificates (see folder security/). If false, the file shipped by OpenJDK will be used. 
+
 -n, --no-colour
 disable colour output.
 
@@ -212,8 +215,7 @@ For reference, OpenJDK version numbers look like 1.8.0_162-b12 (for Java 8) or
 This is typically used in conjunction with -b.
 
 --use-jep319-certs
-Use certs defined in JEP319 in Java 8/9. This will increase the volume of traffic downloaded, however will
-provide an upto date ca cert list.
+Use certs defined in JEP319 in Java 8/9. Deprecated, has no effect.
 
 -v, --version
 specify the OpenJDK version to build e.g. jdk8u.  Left for backwards compatibility.
@@ -314,16 +316,16 @@ according to your local platform and then build (Adopt) OpenJDK and place the re
 These scripts default to using AdoptOpenJDK as the OpenJDK source repo to build
 from, but you can override this with the `-r` flag.
 
-#Metadata
-**This is still in alpha do not rely on this yet**
+# Metadata
 Alongside the built assets a metadata file will be created with info about the build. This will be a JSON document of the form:
 
 ```
 {
-    "WARNING": "THIS METADATA FILE IS STILL IN ALPHA DO NOT USE ME",
+    "vendor": "AdoptOpenJDK",
     "os": "mac",
     "arch": "x64",
     "variant": "openj9",
+    "jvm_version": "openj9-0.22.0",
     "version": {
         "minor": 0,
         "security": 0,
