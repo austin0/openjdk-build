@@ -838,25 +838,26 @@ addInfoToReleaseFile(){
   addImplementor
   addBuildSHA
   addFullVersion
+  addSemVer
   addBuildOS
   addJVMVariant
   addJVMVersion
   # OpenJ9 specific options
   if [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_OPENJ9}" ]; then
     addHeapSize
+    addJ9Tag
   fi
 }
 
-addHeapSize(){
-  local jdkPath=$PRODUCT_HOME
-  if [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK8_CORE_VERSION}" ]; then
-    if [ -d $jdkPath/jre/lib/amd64/compressedrefs ] || [ -d $jdkPath/lib/compressedrefs ]; then
-      echo -e HEAP_SIZE=\"Standard\" >> release
-    else # Large heap has the folder /jre/lib/amd64/default or /lib/default
-      echo -e HEAP_SIZE=\"Large\" >> release
-    fi
+addHeapSize(){ # Adds an identifier for heap size on OpenJ9 builds
+  local heapSize=""
+  if [[ $($JAVA_LOC -version 2>&1 | grep 'Compressed References') ]]; then
+    heapSize="Standard"
+  else
+    heapSize="Large"
   fi
-}
+  echo -e HEAP_SIZE=\"$heapSize\" >> release
+ }
 
 addImplementor(){
   if [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK8_CORE_VERSION}" ]; then
@@ -897,6 +898,28 @@ addBuildOS(){
     buildVer=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'os.version' | sed 's/^.*= //' | tr -d '\r')
   fi
   echo -e BUILD_INFO=\"OS: $buildOS Version: $buildVer\" >> release
+}
+
+addJ9Tag(){
+  # java.vm.version varies or for OpenJ9 depending on if it is a release build i.e. master-*gitSha* or 0.21.0
+  # This code makes sure that a version number is always present in the release file i.e. openj9-0.21.0
+  if [ ${BUILD_CONFIG[RELEASE]} = false ]; then
+    local j9Location="${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}/openj9"
+    # Pull the tag associated with the J9 commit being used
+    local j9Tag=$(git -C $j9Location describe --abbrev=0)
+    echo -e OPENJ9_TAG=\"$j9Tag\" >> release
+  fi
+}
+
+addSemVer(){ # For RELEASES jdk11+ can use fullVer, jdk8u needs help. NON-RELEASES need help always
+  local fullVer=$(getOpenJdkVersion)
+  local semVer="$fullVer"
+  if [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK8_CORE_VERSION}" ]; then
+    semVer=$(echo "$semVer" | cut -c4- | awk -F'[\-b0]+' '{print $1"+"$2}' | sed 's/u/.0./')
+  else
+    semVer=$(echo "$semVer" | cut -c5-)
+  fi
+  echo -e SEMANTIC_VERSION=\"$semVer\" >> release
 }
 
 ################################################################################
