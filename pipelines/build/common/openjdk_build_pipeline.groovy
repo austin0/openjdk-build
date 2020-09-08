@@ -513,7 +513,6 @@ class Build {
         /*
         example data:
             {
-                "WARNING": "THIS METADATA FILE IS STILL IN ALPHA DO NOT USE ME",
                 "os": "mac",
                 "arch": "x64",
                 "variant": "openj9",

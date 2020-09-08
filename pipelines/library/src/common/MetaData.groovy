@@ -1,7 +1,6 @@
 package common
 
 class MetaData {
-    final String WARNING = "THIS METADATA FILE IS STILL IN ALPHA DO NOT USE ME"
     final String os
     final String arch
     final String variant
