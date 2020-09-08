@@ -314,16 +314,15 @@ according to your local platform and then build (Adopt) OpenJDK and place the re
 These scripts default to using AdoptOpenJDK as the OpenJDK source repo to build
 from, but you can override this with the `-r` flag.
 
-#Metadata
-**This is still in alpha do not rely on this yet**
+# Metadata
 Alongside the built assets a metadata file will be created with info about the build. This will be a JSON document of the form:
 
 ```
 {
-    "WARNING": "THIS METADATA FILE IS STILL IN ALPHA DO NOT USE ME",
     "os": "mac",
     "arch": "x64",
     "variant": "openj9",
+    "jvm_version": "openj9-0.22.0",
     "version": {
         "minor": 0,
         "security": 0,
