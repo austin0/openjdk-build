@@ -831,6 +831,12 @@ fixJavaHomeUnderDocker() {
   fi
 }
 
+makeJvmVer(){
+  JAVA_LOC="$PRODUCT_HOME/bin/java"
+  local jvmVersion=$($JAVA_LOC -XshowSettings:properties -version 2>&1 | grep 'java.vm.version' | sed 's/^.*= //' | tr -d '\r')
+  echo $jvmVersion > ${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/jvm_version.txt
+}
+
 ################################################################################
 
 loadConfigFromFile
