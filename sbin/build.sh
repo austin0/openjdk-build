@@ -869,6 +869,7 @@ executeTemplatedFile
 
 if [[ "${BUILD_CONFIG[MAKE_EXPLODED]}" != "true" ]]; then
   printJavaVersionString
+  makeJvmVer
   removingUnnecessaryFiles
   copyFreeFontForMacOS
   createOpenJDKTarArchive
