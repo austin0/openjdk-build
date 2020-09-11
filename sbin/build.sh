@@ -132,7 +132,7 @@ getOpenJdkVersion() {
   local version;
 
   if [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_CORRETTO}" ]; then
-    local corrVerFile=${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}/version.txt
+    local corrVerFile=${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}/metadata/version.txt
 
     local corrVersion="$(cut -d'.' -f 1 < ${corrVerFile})"
 
@@ -541,7 +541,7 @@ printJavaVersionString()
        # riscv is cross compiled, so we cannot run it on the build system
        # This is a temporary plausible solution in the absence of another fix
        local jdkversion=$(getOpenJdkVersion)
-       cat << EOT > "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/version.txt"
+       cat << EOT > "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/version.txt"
 openjdk version "${jdkversion%%+*}" "$(date +%Y-%m-%d)"
 OpenJDK Runtime Environment AdoptOpenJDK (build ${jdkversion%%+*}+0-$(date +%Y%m%d%H%M))
 Eclipse OpenJ9 VM AdoptOpenJDK (build master-000000000, JRE 11 Linux riscv-64-Bit Compressed References $(date +%Y%m%d)_00 (JIT disabled, AOT disabled)
@@ -556,7 +556,7 @@ EOT
        "$PRODUCT_HOME"/bin/java -version 2>&1
        echo "=/JAVA VERSION OUTPUT="
 
-       "$PRODUCT_HOME"/bin/java -version > "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/version.txt" 2>&1
+       "$PRODUCT_HOME"/bin/java -version > "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/version.txt" 2>&1
      fi
   else
     echo "'$PRODUCT_HOME' does not exist, build might have not been successful or not produced the expected JDK image at this location."
@@ -840,6 +840,9 @@ wipeOutOldTargetDir() {
 createTargetDir() {
   # clean out old builds
   mkdir -p "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}" || exit
+  mkdir "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata" || exit
+  mkdir "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/jvm_version" || exit
+
 }
 
 fixJavaHomeUnderDocker() {
@@ -903,8 +906,8 @@ addJVMVariant(){
 }
 
 addBuildSHA(){ # git SHA of the build repository i.e. openjdk-build
-  local buildSHA=$(git -C ${BUILD_CONFIG[WORKSPACE_DIR]} rev-parse --short HEAD)
-  echo -e BUILD_SOURCE=\"git:$buildSHA\" >> release
+  BUILD_SHA=$(git -C ${BUILD_CONFIG[WORKSPACE_DIR]} rev-parse --short HEAD)
+  echo -e BUILD_SOURCE=\"git:$BUILD_SHA\" >> release
 }
 
 addBuildOS(){
@@ -929,20 +932,20 @@ addJ9Tag(){
   if [ ${BUILD_CONFIG[RELEASE]} = false ]; then
     local j9Location="${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}/openj9"
     # Pull the tag associated with the J9 commit being used
-    local j9Tag=$(git -C $j9Location describe --abbrev=0)
-    echo -e OPENJ9_TAG=\"$j9Tag\" >> release
+    J9_Tag=$(git -C $j9Location describe --abbrev=0)
+    echo -e OPENJ9_TAG=\"$J9_TAG\" >> release
   fi
 }
 
 addSemVer(){ # Pulls the semantic version from the tag associated with the openjdk repo
   local fullVer=$(getOpenJdkVersion)
-  local semVer="$fullVer"
+  SEM_VER="$fullVer"
   if [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK8_CORE_VERSION}" ]; then
-    semVer=$(echo "$semVer" | cut -c4- | awk -F'[\-b0]+' '{print $1"+"$2}' | sed 's/u/.0./')
+    SEM_VER=$(echo "$semVer" | cut -c4- | awk -F'[\-b0]+' '{print $1"+"$2}' | sed 's/u/.0./') # i.e. 8.0.272+5
   else
-    semVer=$(echo "$semVer" | cut -c5-)
+    SEM_VER=$(echo "$semVer" | cut -c5-) # i.e. 11.0.2+12
   fi
-  echo -e SEMANTIC_VERSION=\"$semVer\" >> release
+  echo -e SEMANTIC_VERSION=\"$SEM_VER\" >> release
 }
 
 mirrorToJRE(){
@@ -963,6 +966,41 @@ mirrorToJRE(){
 addImageType(){
   echo -e IMAGE_TYPE=\"JDK\" >> $PRODUCT_HOME/release
   echo -e IMAGE_TYPE=\"JRE\" >> $JRE_HOME/release
+}
+
+addInfoToJson(){
+  mv "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/configure.txt" "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/"
+  addJVMInfoToJson
+  addVendorToJson
+  addSourceToJson # Build repository commit SHA
+}
+
+addJVMInfoToJson(){
+  local jvmJson=$(echo "$SEM_VER" | tr "+" ".") # i.e. 8.0.272.7
+  if [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_OPENJ9}" ]; then  
+    jvmJson=$(echo "$J9_TAG" | cut -c8- | tr "-" ".") # i.e. 0.22.0.m2
+  fi
+  local major=$(echo "$jvmJson" | awk -F[.] '{print $1}')
+  local minor=$(echo "$jvmJson" | awk -F[.] '{print $2}')
+  local security=$(echo "$jvmJson" | awk -F[.] '{print $3}')
+  local tags=$(echo "$jvmJson" | awk -F[.] '{print $4}')
+  if [[ $(echo "$jvmJson" | tr -cd '.' | wc -c) -lt 3 ]]; then # Newer jdk versions will not have minor or security patches i.e. 16+13
+    $tags="$minor"
+    $minor=""
+  fi
+  echo ${major:-"0"} > ${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/jvm_version/major.txt
+  echo ${minor:-"0"} > ${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/jvm_version/minor.txt
+  echo ${secuity:-"0"} > ${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/jvm_version/security.txt
+  echo $tags > ${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/jvm_version/tags.txt
+}
+
+addVendorToJson(){
+  echo "${BUILD_CONFIG[VENDOR]}" > ${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/vendor.txt
+}
+
+addSourceToJson(){
+  local repoName=$(basename -s .git $(cd ${BUILD_CONFIG[WORKSPACE_DIR]} && git config --get remote.origin.url))
+  echo "$repoName/$BUILD_SHA" > ${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/buildSource.txt
 }
 
 ################################################################################
@@ -998,6 +1036,7 @@ executeTemplatedFile
 if [[ "${BUILD_CONFIG[MAKE_EXPLODED]}" != "true" ]]; then
   printJavaVersionString
   addInfoToReleaseFile
+  addInfoToJson
   removingUnnecessaryFiles
   copyFreeFontForMacOS
   createOpenJDKTarArchive

@@ -476,8 +476,8 @@ class Build {
 
             }
 
-            // Get full version output
-            String versionPath = "workspace/target/version.txt"
+            // Get Full Version Output
+            String versionPath = "workspace/target/metadata/version.txt"
             context.println "INFO: Attempting to read ${versionPath}..."
 
             try {
@@ -488,8 +488,8 @@ class Build {
                 throw new Exception()
             }
 
-            // Get configure args
-            String configurePath = "workspace/target/configure.txt"
+            // Get Configure Args
+            String configurePath = "workspace/target/metadata/configure.txt"
             context.println "INFO: Attempting to read ${configurePath}..."
 
             try {
@@ -499,14 +499,84 @@ class Build {
                 context.println "ERROR: ${configurePath} was not found. Exiting..."
                 throw new Exception()
             }
+
+            // Get JVM Version
+            String jvmMajorPath = "workspace/target/metadata/jvm_version/major.txt"
+            String jvmMinorPath = "workspace/target/metadata/jvm_version/minor.txt"
+            String jvmSecurityPath = "workspace/target/metadata/jvm_version/security.txt"
+            String jvmTagsPath = "workspace/target/metadata/jvm_version/tags.txt"
+
+            context.println "INFO: Attempting to read workspace/target/metadata/jvm_version/*..."
+
+            try {
+                jvmMajor = context.readFile(jvmMajorPath)
+                context.println "SUCCESS: major.txt found"
+            } catch (NoSuchFileException e) {
+                context.println "ERROR: ${jvmMajorPath} was not found. Exiting..."
+                throw new Exception()
+            }
+
+            try {
+                jvmMinor = context.readFile(jvmMinorPath)
+                context.println "SUCCESS: minor.txt found"
+            } catch (NoSuchFileException e) {
+                context.println "ERROR: ${jvmMinorPath} was not found. Exiting..."
+                throw new Exception()
+            }
+
+            try {
+                jvmSecurity = context.readFile(jvmSecurityPath)
+                context.println "SUCCESS: security.txt found"
+            } catch (NoSuchFileException e) {
+                context.println "ERROR: ${jvmSecurityPath} was not found. Exiting..."
+                throw new Exception()
+            }
+
+            try {
+                jvmTags = context.readFile(jvmTagsPath)
+                context.println "SUCCESS: tags.txt found"
+            } catch (NoSuchFileException e) {
+                context.println "ERROR: ${jvmTagsPath} was not found. Exiting..."
+                throw new Exception()
+            }
+
+            jvmVersion = [major: jvmMajor, minor: jvmMinor, security: jvmSecurity, tags: jvmTags]
+
+            // Get Vendor
+            String vendorPath = "workspace/target/metadata/vendor.txt"
+            context.println "INFO: Attempting to read ${vendorPath}..."
+
+            try {
+                vendorName = context.readFile(vendorPath)
+                context.println "SUCCESS: vendor.txt found"
+            } catch (NoSuchFileException e) {
+                context.println "ERROR: ${vendorPath} was not found. Exiting..."
+                throw new Exception()
+            }
+
+            // Get Build Source
+            String buildSourcePath = "workspace/target/metadata/buildSource.txt"
+            context.println "INFO: Attempting to read ${buildSourcePath}..."
+
+            try {
+                buildSource = context.readFile(buildSourcePath)
+                context.println "SUCCESS: buildSource.txt found"
+            } catch (NoSuchFileException e) {
+                context.println "ERROR: ${buildSourcePath} was not found. Exiting..."
+                throw new Exception()
+            }
+        
         }
 
         return new MetaData(
+            vendorName,
             buildConfig.TARGET_OS,
             scmRef,
+            buildSource,
             version,
             buildConfig.JAVA_TO_BUILD,
             buildConfig.VARIANT,
+            jvmVersion,
             buildConfig.ARCHITECTURE,
             fullVersionOutput,
             configureArguments
@@ -518,10 +588,16 @@ class Build {
         /*
         example data:
             {
-                "WARNING": "THIS METADATA FILE IS STILL IN ALPHA DO NOT USE ME",
+                "vendor": "AdoptOpenJDK",
                 "os": "mac",
                 "arch": "x64",
                 "variant": "openj9",
+                "jvm_version": {
+                    "major": "0",
+                    "minor": "22",
+                    "security": "0",
+                    "tags": "m2"
+                },
                 "version": {
                     "minor": 0,
                     "security": 0,
@@ -534,6 +610,7 @@ class Build {
                     "opt": "202007070926"
                 },
                 "scmRef": "<output of git describe OR buildConfig.SCM_REF>",
+                "buildRef": "<build-repo-name/build-commit-sha>",
                 "version_data": "jdk15",
                 "binary_type": "debugimage",
                 "sha256": "<shasum>",
@@ -645,7 +722,7 @@ class Build {
                 envVars.add("FILENAME=${filename}" as String)
                 context.withEnv(envVars) {
                     context.sh(script: "./build-farm/make-adopt-build-farm.sh")
-                    String versionOut = context.readFile("workspace/target/version.txt")
+                    String versionOut = context.readFile("workspace/target/metadata/version.txt")
 
                     versionInfo = parseVersionOutput(versionOut)
                 }
