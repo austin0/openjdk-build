@@ -941,9 +941,9 @@ addSemVer(){ # Pulls the semantic version from the tag associated with the openj
   local fullVer=$(getOpenJdkVersion)
   SEM_VER="$fullVer"
   if [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK8_CORE_VERSION}" ]; then
-    SEM_VER=$(echo "$semVer" | cut -c4- | awk -F'[\-b0]+' '{print $1"+"$2}' | sed 's/u/.0./') # i.e. 8.0.272+5
+    SEM_VER=$(echo "$SEM_VER" | cut -c4- | awk -F'[\-b0]+' '{print $1"+"$2}' | sed 's/u/.0./') # i.e. 8.0.272+5
   else
-    SEM_VER=$(echo "$semVer" | cut -c5-) # i.e. 11.0.2+12
+    SEM_VER=$(echo "$SEM_VER" | cut -c5-) # i.e. 11.0.2+12
   fi
   echo -e SEMANTIC_VERSION=\"$SEM_VER\" >> release
 }
@@ -985,8 +985,8 @@ addJVMInfoToJson(){
   local security=$(echo "$jvmJson" | awk -F[.] '{print $3}')
   local tags=$(echo "$jvmJson" | awk -F[.] '{print $4}')
   if [[ $(echo "$jvmJson" | tr -cd '.' | wc -c) -lt 3 ]]; then # Newer jdk versions will not have minor or security patches i.e. 16+13
-    $tags="$minor"
-    $minor=""
+    tags="$minor"
+    minor=""
   fi
   echo ${major:-"0"} > ${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/jvm_version/major.txt
   echo ${minor:-"0"} > ${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/jvm_version/minor.txt
