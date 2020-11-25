@@ -20,7 +20,10 @@ class Config15 {
         x64Linux  : [
                 os                  : 'linux',
                 arch                : 'x64',
-                dockerImage         : 'adoptopenjdk/centos7_build_image',
+                dockerImage: [
+                        hotspot     : 'adoptopenjdk/centos6_build_image',
+                        openj9      : 'adoptopenjdk/centos7_build_image'
+                ],
                 dockerFile: [
                         openj9  : 'pipelines/build/dockerFiles/cuda.dockerfile'
                 ],
@@ -102,10 +105,6 @@ class Config15 {
         ppc64leLinux    : [
                 os                  : 'linux',
                 arch                : 'ppc64le',
-                dockerImage          : 'adoptopenjdk/centos7_build_image',
-                dockerFile: [
-                        openj9  : 'pipelines/build/dockerFiles/cuda.dockerfile'
-                ],
                 test                : 'default',
                 configureArgs       : [
                         "hotspot"     : '--enable-dtrace',
@@ -116,10 +115,6 @@ class Config15 {
         ppc64leLinuxXL    : [
                 os                   : 'linux',
                 arch                 : 'ppc64le',
-                dockerImage          : 'adoptopenjdk/centos7_build_image',
-                dockerFile: [
-                        openj9  : 'pipelines/build/dockerFiles/cuda.dockerfile'
-                ],
                 test                 : 'default',
                 additionalFileNameTag: "linuxXL",
                 configureArgs        : '--with-noncompressedrefs --disable-ccache --enable-dtrace'
@@ -128,10 +123,7 @@ class Config15 {
         arm32Linux    : [
                 os                  : 'linux',
                 arch                : 'arm',
-                test                : [
-                        nightly: ['sanity.openjdk'],
-                        weekly : []
-                ],
+                test                : 'default',
                 configureArgs       : '--enable-dtrace'
         ],
 

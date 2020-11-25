@@ -10,11 +10,23 @@ class Config16 {
                 ],
                 configureArgs       : '--enable-dtrace'
         ],
+        
+        x64MacXL    : [
+                os                   : 'mac',
+                arch                 : 'x64',
+                additionalNodeLabels : 'macos10.14',
+                test                 : 'default',
+                additionalFileNameTag: "macosXL",
+                configureArgs        : '--with-noncompressedrefs --enable-dtrace'
+        ],
 
         x64Linux  : [
                 os                  : 'linux',
                 arch                : 'x64',
-                dockerImage         : 'adoptopenjdk/centos7_build_image',
+                dockerImage: [
+                        hotspot     : 'adoptopenjdk/centos6_build_image',
+                        openj9      : 'adoptopenjdk/centos7_build_image'
+                ],
                 dockerFile: [
                         openj9  : 'pipelines/build/dockerFiles/cuda.dockerfile'
                 ],
@@ -25,6 +37,30 @@ class Config16 {
                 configureArgs       : [
                         "openj9"      : '--enable-dtrace --enable-jitserver',
                         "hotspot"     : '--enable-dtrace'
+                ]
+        ],
+        
+        x64LinuxXL  : [
+                os                   : 'linux',
+                arch                 : 'x64',
+                dockerImage          : 'adoptopenjdk/centos7_build_image',
+                dockerFile: [
+                        openj9  : 'pipelines/build/dockerFiles/cuda.dockerfile'
+                ],
+                test                 : 'default',
+                additionalFileNameTag: "linuxXL",
+                configureArgs        : '--with-noncompressedrefs --enable-dtrace --enable-jitserver'
+        ],
+
+        x64AlpineLinux  : [
+                os                  : 'alpine-linux',
+                arch                : 'x64',
+                dockerImage         : 'adoptopenjdk/alpine3_build_image',
+                test                : [
+                        // TODO: enable tests
+                        nightly: [],
+                        // release: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.external', 'special.functional']
+                        release: []
                 ]
         ],
 
@@ -39,6 +75,15 @@ class Config16 {
                         nightly: [],
                         weekly : ['sanity.openjdk', 'sanity.perf', 'sanity.system', 'extended.system']
                 ]
+        ],
+        
+        x64WindowsXL: [
+                os                   : 'windows',
+                arch                 : 'x64',
+                additionalNodeLabels : 'win2012&&vs2017',
+                test                 : 'default',
+                additionalFileNameTag: "windowsXL",
+                configureArgs        : '--with-noncompressedrefs'
         ],
 
         x32Windows: [
@@ -76,14 +121,18 @@ class Config16 {
                 ],
                 configureArgs       : '--enable-dtrace'
         ],
+        
+        s390xLinuxXL  : [
+                os                   : 'linux',
+                arch                 : 's390x',
+                test                 : 'default',
+                additionalFileNameTag: "linuxXL",
+                configureArgs        : '--with-noncompressedrefs --enable-dtrace'
+        ],
 
         ppc64leLinux    : [
                 os                  : 'linux',
                 arch                : 'ppc64le',
-                dockerImage          : 'adoptopenjdk/centos7_build_image',
-                dockerFile: [
-                        openj9  : 'pipelines/build/dockerFiles/cuda.dockerfile'
-                ],
                 test                : [
                         nightly: [],
                         weekly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
@@ -93,6 +142,14 @@ class Config16 {
                         "openj9"      : '--enable-dtrace --enable-jitserver'
                 ]
 
+        ],
+        
+        ppc64leLinuxXL    : [
+                os                   : 'linux',
+                arch                 : 'ppc64le',
+                test                 : 'default',
+                additionalFileNameTag: "linuxXL",
+                configureArgs        : '--with-noncompressedrefs --disable-ccache --enable-dtrace'
         ],
 
         aarch64Linux    : [
@@ -104,6 +161,15 @@ class Config16 {
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
                 ],
                 configureArgs       : '--enable-dtrace'
+        ],
+        
+        aarch64LinuxXL    : [
+                os                   : 'linux',
+                dockerImage          : 'adoptopenjdk/centos7_build_image',
+                arch                 : 'aarch64',
+                test                 : 'default',
+                additionalFileNameTag: "linuxXL",
+                configureArgs        : '--with-noncompressedrefs --enable-dtrace'
         ],
 
         arm32Linux    : [

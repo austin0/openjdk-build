@@ -18,20 +18,19 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # shellcheck source=sbin/common/constants.sh
 source "$SCRIPT_DIR/../../sbin/common/constants.sh"
 
-export BUILD_ARGS="${BUILD_ARGS} --skip-freetype"
+# ccache seems flaky on alpine
+export CONFIGURE_ARGS_FOR_ANY_PLATFORM="${CONFIGURE_ARGS_FOR_ANY_PLATFORM} --disable-ccache"
 
-if [ "${ARCHITECTURE}" == "x64" ]; then
-  export CUPS="--with-cups=/opt/sfw/cups"
-  export MEMORY=4000
-elif [ "${ARCHITECTURE}" == "sparcv9" ]; then
-  export CUPS="--with-cups=/opt/csw/lib/ --with-cups-include=/usr/local/cups-1.5.4-src"
-  export FREETYPE="--with-freetype=/usr/local/"
-  export MEMORY=16000
+# Any version above 8 (11 for now due to openjdk-build#1409
+if [ "$JAVA_FEATURE_VERSION" -gt 11 ]; then
+    BOOT_JDK_VERSION="$((JAVA_FEATURE_VERSION-1))"
+    BOOT_JDK_VARIABLE="JDK$(echo $BOOT_JDK_VERSION)_BOOT_DIR"
+    export JDK_BOOT_DIR="$(eval echo "\$$BOOT_JDK_VARIABLE")"
+    "$JDK_BOOT_DIR/bin/java" -version
+    executedJavaVersion=$?
+    if [ $executedJavaVersion -ne 0 ]; then
+        echo "Failed to obtain or find a valid boot jdk"
+        exit 1
+    fi
+    "$JDK_BOOT_DIR/bin/java" -version 2>&1 | sed 's/^/BOOT JDK: /'
 fi
-
-export CONFIGURE_ARGS_FOR_ANY_PLATFORM="${CONFIGURE_ARGS_FOR_ANY_PLATFORM} ${CUPS} ${FREETYPE} --with-memory-size=${MEMORY}"
-export PATH=/opt/solarisstudio12.3/bin/:/opt/csw/bin/:/usr/ccs/bin:$PATH
-
-export LC_ALL=C
-export HOTSPOT_DISABLE_DTRACE_PROBES=true
-export ENFORCE_CC_COMPILER_REV=5.12
