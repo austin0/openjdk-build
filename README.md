@@ -131,13 +131,14 @@ removes the existing docker container and persistent volume before starting
 a new docker based build.
 
 -C, --configure-args <args>
-specify any custom user configuration arguments.
+specify any custom user configuration arguments, using 
+temporary_speech_mark_placeholder in the place of any speech marks.
 
 --clean-git-repo
 clean out any 'bad' local git repo you already have.
 
---create-debug-symbols-package
-create a debug-symbols only archive (if debug symbols were generated).
+--create-debug-image
+create a debug-image archive with the debug symbols.
 
 -d, --destination <path>
 specify the location for the built binary, e.g. /path/.
@@ -146,6 +147,9 @@ This is typically used in conjunction with -T to create a custom path
 
 -D, --docker
 build OpenJDK in a docker container.
+
+--cross-compile
+use this if you are cross compiling - it will skip the java -version checks at the end
 
 --debug-docker
 debug OpenJDK build script in a docker container. Only valid if -D is selected.

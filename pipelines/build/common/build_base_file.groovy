@@ -49,8 +49,11 @@ class Builder implements Serializable {
     boolean publish
     boolean enableTests
     boolean enableInstallers
+    boolean enableSigner
     boolean cleanWorkspaceBeforeBuild
     boolean propagateFailures
+    boolean keepTestReportDir
+    boolean keepReleaseLogs
 
     def env
     def scmVars
@@ -98,6 +101,10 @@ class Builder implements Serializable {
 
         def additionalNodeLabels = formAdditionalBuildNodeLabels(platformConfig, variant)
 
+        def additionalTestLabels = formAdditionalTestLabels(platformConfig, variant)
+
+        def archLabel = getArchLabel(platformConfig, variant)
+
         def dockerImage = getDockerImage(platformConfig, variant)
 
         def dockerFile = getDockerFile(platformConfig, variant)
@@ -126,7 +133,9 @@ class Builder implements Serializable {
                 TEST_LIST: testList,
                 SCM_REF: scmReference,
                 BUILD_ARGS: buildArgs,
-                NODE_LABEL: "${additionalNodeLabels}&&${platformConfig.os}&&${platformConfig.arch}",
+                NODE_LABEL: "${additionalNodeLabels}&&${platformConfig.os}&&${archLabel}",
+                ADDITIONAL_TEST_LABEL: "${additionalTestLabels}",
+                KEEP_TEST_REPORTDIR: keepTestReportDir,
                 ACTIVE_NODE_TIMEOUT: activeNodeTimeout,
                 CODEBUILD: platformConfig.codebuild as Boolean,
                 DOCKER_IMAGE: dockerImage,
@@ -141,6 +150,7 @@ class Builder implements Serializable {
                 ADOPT_BUILD_NUMBER: adoptBuildNumber,
                 ENABLE_TESTS: enableTests,
                 ENABLE_INSTALLERS: enableInstallers,
+                ENABLE_SIGNER: enableSigner,
                 CLEAN_WORKSPACE: cleanWorkspace
         )
     }
@@ -165,7 +175,7 @@ class Builder implements Serializable {
                     return buildArgs.get(variant)
                 }
             } else {
-                context.error("Incorrect buildArgs type")
+                return configuration.buildArgs
             }
         }
 
@@ -237,6 +247,17 @@ class Builder implements Serializable {
         }
 
         return overrideDocker
+    }
+
+    def getArchLabel(Map<String, ?> configuration, String variant) {
+        def archLabelVal = ""
+        // Workaround for cross compiled architectures
+        if (configuration.containsKey("crossCompile")) {
+            archLabelVal = configuration.crossCompile
+        } else {
+            archLabelVal = configuration.arch
+        }
+        return archLabelVal
     }
 
     /*
@@ -313,6 +334,32 @@ class Builder implements Serializable {
 
             if (additionalNodeLabels != null) {
                 labels = "${additionalNodeLabels}&&${labels}"
+            }
+        }
+
+        return labels
+    }
+
+    /**
+    * Builds up additional test labels
+    * @param configuration
+    * @param variant
+    * @return
+    */
+    def formAdditionalTestLabels(Map<String, ?> configuration, String variant) {
+        def labels = ""
+
+        if (configuration.containsKey("additionalTestLabels")) {
+            def additionalTestLabels
+
+            if (isMap(configuration.additionalTestLabels)) {
+                additionalTestLabels = (configuration.additionalTestLabels as Map<String, ?>).get(variant)
+            } else {
+                additionalTestLabels = configuration.additionalTestLabels
+            }
+
+            if (additionalTestLabels != null) {
+                labels = "${additionalTestLabels}"
             }
         }
 
@@ -436,10 +483,11 @@ class Builder implements Serializable {
 
     /*
     Ensures that we don't release multiple variants at the same time
+    Unless this is the weekend weekly release build that won't have a publishName
     */
     def checkConfigIsSane(Map<String, IndividualBuildConfig> jobConfigurations) {
 
-        if (release) {
+        if (release && publishName) {
 
             // Doing a release
             def variants = jobConfigurations
@@ -499,8 +547,9 @@ class Builder implements Serializable {
             }
 
             if (release) {
-                currentBuild.setKeepLog(true)
                 if (publishName) {
+                    // Keep Jenkins release logs for real releases
+                    currentBuild.setKeepLog(keepReleaseLogs)
                     currentBuild.setDisplayName(publishName)
                 }
             }
@@ -511,9 +560,12 @@ class Builder implements Serializable {
             context.echo "OS: ${targetConfigurations}"
             context.echo "Enable tests: ${enableTests}"
             context.echo "Enable Installers: ${enableInstallers}"
+            context.echo "Enable Signer: ${enableSigner}"
             context.echo "Publish: ${publish}"
             context.echo "Release: ${release}"
             context.echo "Tag/Branch name: ${scmReference}"
+            context.echo "Keep test reportdir: ${keepTestReportDir}"
+            context.echo "Keey release logs: ${keepReleaseLogs}"
 
             jobConfigurations.each { configuration ->
                 jobs[configuration.key] = {
@@ -603,7 +655,7 @@ class Builder implements Serializable {
                         publishBinary()
                     }
                 } catch (FlowInterruptedException e) {
-                    context.println "[ERROR] Publish binary timeout (${pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT} HOURS) has been reached. Exiting..."
+                    context.println "[ERROR] Publish binary timeout (${pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT} HOURS) has been reached OR the downstream publish job failed. Exiting..."
                     throw new Exception()
                 }
             } else if (publish && release) {
@@ -622,6 +674,7 @@ return {
     String dockerExcludes,
     String enableTests,
     String enableInstallers,
+    String enableSigner,
     String releaseType,
     String scmReference,
     String overridePublishName,
@@ -632,6 +685,8 @@ return {
     String cleanWorkspaceBeforeBuild,
     String adoptBuildNumber,
     String propagateFailures,
+    String keepTestReportDir,
+    String keepReleaseLogs,
     def currentBuild,
     def context,
     def env ->
@@ -669,6 +724,7 @@ return {
             dockerExcludes: buildsExcludeDocker,
             enableTests: Boolean.parseBoolean(enableTests),
             enableInstallers: Boolean.parseBoolean(enableInstallers),
+            enableSigner: Boolean.parseBoolean(enableSigner),
             publish: publish,
             release: release,
             scmReference: scmReference,
@@ -680,6 +736,8 @@ return {
             cleanWorkspaceBeforeBuild: Boolean.parseBoolean(cleanWorkspaceBeforeBuild),
             adoptBuildNumber: adoptBuildNumber,
             propagateFailures: Boolean.parseBoolean(propagateFailures),
+            keepTestReportDir: Boolean.parseBoolean(keepTestReportDir),
+            keepReleaseLogs: Boolean.parseBoolean(keepReleaseLogs),
             currentBuild: currentBuild,
             context: context,
             env: env
